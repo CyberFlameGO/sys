@@ -68,8 +68,8 @@ impl Token {
     }
 }
 
-pub fn is_valid_token(value: String) -> Result<(), String> {
-    Token::from_str(&value)
+pub fn is_valid_token(value: &str) -> Result<(), String> {
+    Token::from_str(value)
         .map(|_| ())
         .map_err(|_| format!("Invalid token {}", value))
 }

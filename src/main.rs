@@ -12,10 +12,7 @@ use {
     crate::token::*,
     chrono::prelude::*,
     chrono_humanize::HumanTime,
-    clap::{
-        crate_description, crate_name, value_t, value_t_or_exit, values_t, App, AppSettings, Arg,
-        SubCommand,
-    },
+    clap::{crate_description, crate_name, AppSettings, Arg, Command},
     console::{style, Style},
     db::*,
     exchange::*,
@@ -2437,7 +2434,7 @@ async fn process_account_sync_sweep(
     Ok(())
 }
 
-fn is_valid_token_or_sol(value: String) -> Result<(), String> {
+fn is_valid_token_or_sol(value: &str) -> Result<(), String> {
     if value == "SOL" {
         Ok(())
     } else {
@@ -2457,14 +2454,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let exchanges = ["binance", "binanceus", "ftx", "ftxus"];
 
     let app_version = &*app_version();
-    let mut app = App::new(crate_name!())
+    let mut app = Command::new(crate_name!())
         .about(crate_description!())
         .version(app_version)
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .setting(AppSettings::VersionlessSubcommands)
         .setting(AppSettings::InferSubcommands)
         .arg(
-            Arg::with_name("db_path")
+            Arg::new("db_path")
                 .long("db-path")
                 .value_name("PATH")
                 .takes_value(true)
@@ -2473,8 +2470,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .help("Database path"),
         )
         .arg(
-            Arg::with_name("json_rpc_url")
-                .short("u")
+            Arg::new("json_rpc_url")
+                .short('u')
                 .long("url")
                 .value_name("URL")
                 .takes_value(true)
@@ -2484,18 +2481,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .help("JSON RPC URL for the cluster"),
         )
         .arg(
-            Arg::with_name("verbose")
-                .short("v")
+            Arg::new("verbose")
+                .short('v')
                 .long("verbose")
                 .takes_value(false)
                 .global(true)
                 .help("Show additional information"),
         )
         .subcommand(
-            SubCommand::with_name("price")
+            Command::new("price")
                 .about("Get historical SOL price from CoinGecko")
                 .arg(
-                    Arg::with_name("when")
+                    Arg::new("when")
                         .value_name("YY/MM/DD")
                         .takes_value(true)
                         .required(true)
@@ -2504,34 +2501,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .help("Date to fetch the price for"),
                 )
                 .arg(
-                    Arg::with_name("token")
+                    Arg::new("token")
                         .value_name("SOL or SPL Token")
                         .takes_value(true)
                         .required(true)
-                        .validator(is_valid_token_or_sol)
+                        .validator(|s| is_valid_token_or_sol(s))
                         .default_value("SOL")
                         .help("Token type"),
                 ),
         )
-        .subcommand(SubCommand::with_name("sync").about("Synchronize with all exchanges"))
+        .subcommand(Command::new("sync").about("Synchronize with all exchanges"))
         .subcommand(
-            SubCommand::with_name("account")
+            Command::new("account")
                 .about("Account management")
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .setting(AppSettings::InferSubcommands)
                 .subcommand(
-                    SubCommand::with_name("add")
+                    Command::new("add")
                         .about("Register an account")
                         .arg(
-                            Arg::with_name("token")
+                            Arg::new("token")
                                 .value_name("SOL or SPL Token")
                                 .takes_value(true)
                                 .required(true)
-                                .validator(is_valid_token_or_sol)
+                                .validator(|s| is_valid_token_or_sol(s))
                                 .help("Token type"),
                         )
                         .arg(
-                            Arg::with_name("address")
+                            Arg::new("address")
                                 .value_name("ADDRESS")
                                 .takes_value(true)
                                 .required(true)
@@ -2539,16 +2536,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Account address to add"),
                         )
                         .arg(
-                            Arg::with_name("description")
-                                .short("d")
+                            Arg::new("description")
+                                .short('d')
                                 .long("description")
                                 .value_name("TEXT")
                                 .takes_value(true)
                                 .help("Account description"),
                         )
                         .arg(
-                            Arg::with_name("when")
-                                .short("w")
+                            Arg::new("when")
+                                .short('w')
                                 .long("when")
                                 .value_name("YY/MM/DD")
                                 .takes_value(true)
@@ -2558,8 +2555,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Date acquired (ignored if the --transaction argument is provided)"),
                         )
                         .arg(
-                            Arg::with_name("transaction")
-                                .short("t")
+                            Arg::new("transaction")
+                                .short('t')
                                 .long("transaction")
                                 .value_name("SIGNATURE")
                                 .takes_value(true)
@@ -2567,8 +2564,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Acquisition transaction signature"),
                         )
                         .arg(
-                            Arg::with_name("price")
-                                .short("p")
+                            Arg::new("price")
+                                .short('p')
                                 .long("price")
                                 .value_name("USD")
                                 .takes_value(true)
@@ -2576,25 +2573,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Acquisition price per SOL/token [default: market price on acquisition date]"),
                         )
                         .arg(
-                            Arg::with_name("no_sync")
+                            Arg::new("no_sync")
                                 .long("no-sync")
                                 .takes_value(false)
                                 .help("Never synchronize this account with the on-chain state (advanced; uncommon)"),
                         ),
                 )
                 .subcommand(
-                    SubCommand::with_name("dispose")
+                    Command::new("dispose")
                         .about("Manually record the disposal of SOL/tokens from an account")
                         .arg(
-                            Arg::with_name("token")
+                            Arg::new("token")
                                 .value_name("SOL or SPL Token")
                                 .takes_value(true)
                                 .required(true)
-                                .validator(is_valid_token_or_sol)
+                                .validator(|s| is_valid_token_or_sol(s))
                                 .help("Token type"),
                         )
                         .arg(
-                            Arg::with_name("address")
+                            Arg::new("address")
                                 .value_name("ADDRESS")
                                 .takes_value(true)
                                 .required(true)
@@ -2602,7 +2599,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Account that the SOL/tokens was/where disposed from"),
                         )
                         .arg(
-                            Arg::with_name("amount")
+                            Arg::new("amount")
                                 .value_name("AMOUNT")
                                 .takes_value(true)
                                 .validator(is_amount)
@@ -2610,16 +2607,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Amount of SOL/tokens that was/where disposed from the account"),
                         )
                         .arg(
-                            Arg::with_name("description")
-                                .short("d")
+                            Arg::new("description")
+                                .short('d')
                                 .long("description")
                                 .value_name("TEXT")
                                 .takes_value(true)
                                 .help("Description to associate with the disposal event"),
                         )
                         .arg(
-                            Arg::with_name("when")
-                                .short("w")
+                            Arg::new("when")
+                                .short('w')
                                 .long("when")
                                 .value_name("YY/MM/DD")
                                 .takes_value(true)
@@ -2629,8 +2626,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Disposal date"),
 )
                         .arg(
-                            Arg::with_name("price")
-                                .short("p")
+                            Arg::new("price")
+                                .short('p')
                                 .long("price")
                                 .value_name("USD")
                                 .takes_value(true)
@@ -2639,16 +2636,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         ),
                 )
                 .subcommand(
-                    SubCommand::with_name("ls")
+                    Command::new("ls")
                         .about("List registered accounts")
                         .arg(
-                            Arg::with_name("all")
-                                .short("a")
+                            Arg::new("all")
+                                .short('a')
                                 .long("all")
                                 .help("Display all lots")
                         )
                         .arg(
-                            Arg::with_name("account")
+                            Arg::new("account")
                                 .value_name("ADDRESS")
                                 .takes_value(true)
                                 .validator(is_valid_pubkey)
@@ -2656,16 +2653,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         ),
                 )
                 .subcommand(
-                    SubCommand::with_name("xls")
+                    Command::new("xls")
                         .about("Export an Excel spreadsheet file")
                         .arg(
-                            Arg::with_name("outfile")
+                            Arg::new("outfile")
                                 .value_name("FILEPATH")
                                 .takes_value(true)
                                 .help(".xls file to write"),
                         )
                         .arg(
-                            Arg::with_name("year")
+                            Arg::new("year")
                                 .long("year")
                                 .value_name("YYYY")
                                 .takes_value(true)
@@ -2674,18 +2671,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         ),
                 )
                 .subcommand(
-                    SubCommand::with_name("remove")
+                    Command::new("remove")
                         .about("Unregister an account")
                         .arg(
-                            Arg::with_name("token")
+                            Arg::new("token")
                                 .value_name("SOL or SPL Token")
                                 .takes_value(true)
                                 .required(true)
-                                .validator(is_valid_token_or_sol)
+                                .validator(|s| is_valid_token_or_sol(s))
                                 .help("Token type"),
                         )
                         .arg(
-                            Arg::with_name("address")
+                            Arg::new("address")
                                 .value_name("ADDRESS")
                                 .takes_value(true)
                                 .required(true)
@@ -2693,17 +2690,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Account address to remove"),
                         )
                         .arg(
-                            Arg::with_name("confirm")
+                            Arg::new("confirm")
                                 .long("confirm")
                                 .takes_value(false)
                                 .help("Confirm the operation"),
                         ),
                 )
                 .subcommand(
-                    SubCommand::with_name("set-sweep-stake-account")
+                    Command::new("set-sweep-stake-account")
                         .about("Set the sweep stake account")
                         .arg(
-                            Arg::with_name("address")
+                            Arg::new("address")
                                 .value_name("ADDRESS")
                                 .takes_value(true)
                                 .required(true)
@@ -2711,7 +2708,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Sweep stake account address"),
                         )
                         .arg(
-                            Arg::with_name("stake_authority")
+                            Arg::new("stake_authority")
                                 .value_name("KEYPAIR")
                                 .takes_value(true)
                                 .required(true)
@@ -2719,10 +2716,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         )
                 )
                 .subcommand(
-                    SubCommand::with_name("merge")
+                    Command::new("merge")
                         .about("Merge one stake account into another")
                         .arg(
-                            Arg::with_name("from_address")
+                            Arg::new("from_address")
                                 .value_name("ADDRESS")
                                 .takes_value(true)
                                 .required(true)
@@ -2730,7 +2727,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Source address")
                         )
                         .arg(
-                            Arg::with_name("into_address")
+                            Arg::new("into_address")
                                 .long("into")
                                 .value_name("ADDRESS")
                                 .takes_value(true)
@@ -2739,7 +2736,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Destination address")
                         )
                         .arg(
-                            Arg::with_name("by")
+                            Arg::new("by")
                                 .long("by")
                                 .value_name("KEYPAIR")
                                 .takes_value(true)
@@ -2748,10 +2745,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         )
                 )
                 .subcommand(
-                    SubCommand::with_name("sweep")
+                    Command::new("sweep")
                         .about("Sweep SOL into the sweep stake account")
                         .arg(
-                            Arg::with_name("address")
+                            Arg::new("address")
                                 .value_name("ADDRESS")
                                 .takes_value(true)
                                 .required(true)
@@ -2759,7 +2756,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Source address to sweep from"),
                         )
                         .arg(
-                            Arg::with_name("authority")
+                            Arg::new("authority")
                                 .value_name("KEYPAIR")
                                 .takes_value(true)
                                 .required(true)
@@ -2767,14 +2764,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Source account authority keypair"),
                         )
                         .arg(
-                            Arg::with_name("no_sweep_ok")
+                            Arg::new("no_sweep_ok")
                                 .long("no-sweep-ok")
                                 .takes_value(false)
                                 .help("Exit successfully if a sweep is not possible due to low source account balance"),
                         )
                         .arg(
-                            Arg::with_name("retain")
-                                .short("r")
+                            Arg::new("retain")
+                                .short('r')
                                 .long("retain")
                                 .value_name("SOL")
                                 .takes_value(true)
@@ -2783,10 +2780,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         ),
                 )
                 .subcommand(
-                    SubCommand::with_name("split")
+                    Command::new("split")
                         .about("Split a stake account")
                         .arg(
-                            Arg::with_name("from_address")
+                            Arg::new("from_address")
                                 .value_name("ADDRESS")
                                 .takes_value(true)
                                 .required(true)
@@ -2794,7 +2791,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Address of the account to split")
                         )
                         .arg(
-                            Arg::with_name("amount")
+                            Arg::new("amount")
                                 .value_name("AMOUNT")
                                 .takes_value(true)
                                 .validator(is_amount)
@@ -2802,15 +2799,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("The amount to split, in SOL"),
                         )
                         .arg(
-                            Arg::with_name("description")
-                                .short("d")
+                            Arg::new("description")
+                                .short('d')
                                 .long("description")
                                 .value_name("TEXT")
                                 .takes_value(true)
                                 .help("Description of the new account"),
                         )
                         .arg(
-                            Arg::with_name("by")
+                            Arg::new("by")
                                 .long("by")
                                 .value_name("KEYPAIR")
                                 .takes_value(true)
@@ -2818,7 +2815,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Optional authority for the split"),
                         )
                         .arg(
-                            Arg::with_name("into_keypair")
+                            Arg::new("into_keypair")
                                 .long("into")
                                 .value_name("KEYPAIR")
                                 .takes_value(true)
@@ -2826,20 +2823,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Optional keypair of the split destination [default: randomly generated]"),
                         )
                         .arg(
-                            Arg::with_name("lot_numbers")
+                            Arg::new("lot_numbers")
                                 .long("lot")
                                 .value_name("LOT NUMBER")
                                 .takes_value(true)
-                                .multiple(true)
+                                .multiple_occurrences(true).multiple_values(true)
                                 .validator(is_parsable::<usize>)
                                 .help("Lot to fund the split from [default: first in, first out]"),
                         )
                 )
                 .subcommand(
-                    SubCommand::with_name("sync")
+                    Command::new("sync")
                         .about("Synchronize an account address")
                         .arg(
-                            Arg::with_name("address")
+                            Arg::new("address")
                                 .value_name("ADDRESS")
                                 .takes_value(true)
                                 .required(false)
@@ -2848,15 +2845,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         ),
                 )
                 .subcommand(
-                    SubCommand::with_name("lot")
+                    Command::new("lot")
                         .about("Account lot management")
                         .setting(AppSettings::SubcommandRequiredElseHelp)
                         .setting(AppSettings::InferSubcommands)
                         .subcommand(
-                            SubCommand::with_name("swap")
+                            Command::new("swap")
                                 .about("Swap lots in the local database only")
                                 .arg(
-                                    Arg::with_name("lot_number1")
+                                    Arg::new("lot_number1")
                                         .value_name("LOT NUMBER")
                                         .takes_value(true)
                                         .required(true)
@@ -2864,7 +2861,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         .help("First lot number"),
                                 )
                                 .arg(
-                                    Arg::with_name("lot_number2")
+                                    Arg::new("lot_number2")
                                         .value_name("LOT NUMBER")
                                         .takes_value(true)
                                         .required(true)
@@ -2873,11 +2870,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 )
                         )
                         .subcommand(
-                            SubCommand::with_name("delete")
+                            Command::new("delete")
                                 .about("Delete a lot from the local database only. \
                                         Useful if the on-chain state is out of sync with the database")
                                 .arg(
-                                    Arg::with_name("lot_number")
+                                    Arg::new("lot_number")
                                         .value_name("LOT NUMBER")
                                         .takes_value(true)
                                         .required(true)
@@ -2885,18 +2882,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         .help("Lot number to delete. Must not be a disposed lot"),
                                 )
                                 .arg(
-                                    Arg::with_name("confirm")
+                                    Arg::new("confirm")
                                         .long("confirm")
                                         .takes_value(false)
                                         .help("Confirm the operation"),
                                 )
                         )
                         .subcommand(
-                            SubCommand::with_name("move")
+                            Command::new("move")
                                 .about("Move a lot to a new addresses in the local database only. \
                                         Useful if the on-chain state is out of sync with the database")
                                 .arg(
-                                    Arg::with_name("lot_number")
+                                    Arg::new("lot_number")
                                         .value_name("LOT NUMBER")
                                         .takes_value(true)
                                         .required(true)
@@ -2904,7 +2901,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         .help("Lot number to move. Must not be a disposed lot"),
                                 )
                                 .arg(
-                                    Arg::with_name("to_address")
+                                    Arg::new("to_address")
                                         .value_name("RECIPIENT_ADDRESS")
                                         .takes_value(true)
                                         .required(true)
@@ -2917,70 +2914,70 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for exchange in &exchanges {
         app = app.subcommand(
-            SubCommand::with_name(exchange)
+            Command::new(exchange)
                 .about("Exchange interactions")
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .setting(AppSettings::InferSubcommands)
                 .subcommand(
-                    SubCommand::with_name("balance")
+                    Command::new("balance")
                         .about("Get exchange balance")
                         .arg(
-                            Arg::with_name("available_only")
+                            Arg::new("available_only")
                                 .long("available")
                                 .takes_value(false)
                                 .help("Only display available balance")
                         )
                         .arg(
-                            Arg::with_name("total_only")
+                            Arg::new("total_only")
                                 .long("total")
                                 .takes_value(false)
                                 .conflicts_with("available_only")
                                 .help("Only display total balance")
                         )
                         .arg(
-                            Arg::with_name("integer")
+                            Arg::new("integer")
                                 .long("integer")
                                 .takes_value(false)
                                 .help("Output integer values with no currency symbols")
                         )
                 )
                 .subcommand(
-                    SubCommand::with_name("address")
+                    Command::new("address")
                         .about("Show deposit address")
                         .arg(
-                            Arg::with_name("token")
+                            Arg::new("token")
                                 .value_name("SOL or SPL Token")
                                 .takes_value(true)
                                 .required(true)
-                                .validator(is_valid_token_or_sol)
+                                .validator(|s| is_valid_token_or_sol(s))
                                 .default_value("SOL")
                                 .help("Token type"),
                         )
                 )
                 .subcommand(
-                    SubCommand::with_name("market")
+                    Command::new("market")
                         .about("Display market info for a given trading pair")
                         .arg(
-                            Arg::with_name("pair")
+                            Arg::new("pair")
                                 .value_name("TRADING_PAIR")
                                 .takes_value(true)
                                 .default_value("SOLUSD")
                         )
                         .arg(
-                            Arg::with_name("ask")
+                            Arg::new("ask")
                                 .long("ask")
                                 .takes_value(false)
                                 .help("Only display the current asking price")
                         )
                         .arg(
-                            Arg::with_name("weighted_24h_average_price")
+                            Arg::new("weighted_24h_average_price")
                                 .long("weighted-24h-average-price")
                                 .takes_value(false)
                                 .conflicts_with("ask")
                                 .help("Only display the weighted average price for the previous 24 hours"),
                         )
                         .arg(
-                            Arg::with_name("hourly")
+                            Arg::new("hourly")
                                 .long("hourly")
                                 .takes_value(false)
                                 .conflicts_with_all(&["ask", "weighted_24h_average_price"])
@@ -2988,33 +2985,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         ),
                 )
                 .subcommand(
-                    SubCommand::with_name("api")
+                    Command::new("api")
                         .about("API Management")
                         .setting(AppSettings::SubcommandRequiredElseHelp)
                         .setting(AppSettings::InferSubcommands)
                         .subcommand(
-                            SubCommand::with_name("set")
+                            Command::new("set")
                                 .about("Set API key")
-                                .arg(Arg::with_name("api_key").required(true).takes_value(true))
-                                .arg(Arg::with_name("secret").required(true).takes_value(true))
-                                .arg(Arg::with_name("subaccount").takes_value(true)),
+                                .arg(Arg::new("api_key").required(true).takes_value(true))
+                                .arg(Arg::new("secret").required(true).takes_value(true))
+                                .arg(Arg::new("subaccount").takes_value(true)),
                         )
-                        .subcommand(SubCommand::with_name("show").about("Show API key"))
-                        .subcommand(SubCommand::with_name("clear").about("Clear API key")),
+                        .subcommand(Command::new("show").about("Show API key"))
+                        .subcommand(Command::new("clear").about("Clear API key")),
                 )
                 .subcommand(
-                    SubCommand::with_name("deposit")
+                    Command::new("deposit")
                         .about("Deposit SOL or SPL Tokens")
                         .arg(
-                            Arg::with_name("token")
+                            Arg::new("token")
                                 .value_name("SOL or SPL Token")
                                 .takes_value(true)
                                 .required(true)
-                                .validator(is_valid_token_or_sol)
+                                .validator(|s| is_valid_token_or_sol(s))
                                 .help("Token type"),
                         )
                         .arg(
-                            Arg::with_name("amount")
+                            Arg::new("amount")
                                 .value_name("AMOUNT")
                                 .takes_value(true)
                                 .validator(is_amount_or_all)
@@ -3022,18 +3019,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("The amount to send, in SOL; accepts keyword ALL"),
                         )
                         .arg(
-                            Arg::with_name("lot_numbers")
+                            Arg::new("lot_numbers")
                                 .long("lot")
                                 .value_name("LOT NUMBER")
                                 .takes_value(true)
-                                .multiple(true)
+                                .multiple_occurrences(true).multiple_values(true)
                                 .validator(is_parsable::<usize>)
                                 .help(
                                     "Lot to fund the deposit from [default: first in, first out]",
                                 ),
                         )
                         .arg(
-                            Arg::with_name("from")
+                            Arg::new("from")
                                 .long("from")
                                 .value_name("FROM_ADDRESS")
                                 .takes_value(true)
@@ -3042,7 +3039,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Source account of funds"),
                         )
                         .arg(
-                            Arg::with_name("by")
+                            Arg::new("by")
                                 .long("by")
                                 .value_name("KEYPAIR")
                                 .takes_value(true)
@@ -3050,7 +3047,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Optional authority of the FROM_ADDRESS"),
                         )
                         .arg(
-                            Arg::with_name("if_source_balance_exceeds")
+                            Arg::new("if_source_balance_exceeds")
                                 .long("if-source-balance-exceeds")
                                 .value_name("AMOUNT")
                                 .takes_value(true)
@@ -3061,7 +3058,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 ),
                         )
                         .arg(
-                            Arg::with_name("if_exchange_balance_less_than")
+                            Arg::new("if_exchange_balance_less_than")
                                 .long("if-exchange-balance-less-than")
                                 .value_name("AMOUNT")
                                 .takes_value(true)
@@ -3073,18 +3070,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         ),
                 )
                 .subcommand(
-                    SubCommand::with_name("withdraw")
+                    Command::new("withdraw")
                         .about("Withdraw SOL or SPL Tokens")
                         .arg(
-                            Arg::with_name("token")
+                            Arg::new("token")
                                 .value_name("SOL or SPL Token")
                                 .takes_value(true)
                                 .required(true)
-                                .validator(is_valid_token_or_sol)
+                                .validator(|s| is_valid_token_or_sol(s))
                                 .help("Token type"),
                         )
                         .arg(
-                            Arg::with_name("to")
+                            Arg::new("to")
                                 .value_name("RECIPIENT_ADDRESS")
                                 .takes_value(true)
                                 .required(true)
@@ -3092,7 +3089,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Address to receive the withdrawal of funds"),
                         )
                         .arg(
-                            Arg::with_name("amount")
+                            Arg::new("amount")
                                 .value_name("AMOUNT")
                                 .takes_value(true)
                                 .validator(is_amount)
@@ -3100,18 +3097,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("The amount to withdraw; accepts keyword ALL"),
                         )
                         .arg(
-                            Arg::with_name("lot_numbers")
+                            Arg::new("lot_numbers")
                                 .long("lot")
                                 .value_name("LOT NUMBER")
                                 .takes_value(true)
-                                .multiple(true)
+                                .multiple_occurrences(true).multiple_values(true)
                                 .validator(is_parsable::<usize>)
                                 .help(
                                     "Lot to fund the withdrawal from [default: first in, first out]",
                                 ),
                         )
                         .arg(
-                            Arg::with_name("code")
+                            Arg::new("code")
                                 .long("code")
                                 .value_name("CODE")
                                 .takes_value(true)
@@ -3119,17 +3116,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         )
                 )
                 .subcommand(
-                    SubCommand::with_name("cancel")
+                    Command::new("cancel")
                         .about("Cancel orders")
                         .arg(
-                            Arg::with_name("order_id")
+                            Arg::new("order_id")
                                 .value_name("ORDER ID")
                                 .takes_value(true)
-                                .multiple(true)
+                                .multiple_occurrences(true).multiple_values(true)
                                 .help("The order id to cancel"),
                         )
                         .arg(
-                            Arg::with_name("age")
+                            Arg::new("age")
                                 .long("age")
                                 .value_name("HOURS")
                                 .takes_value(true)
@@ -3138,7 +3135,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Cancel orders older than this number of hours"),
                         )
                         .arg(
-                            Arg::with_name("side")
+                            Arg::new("side")
                                 .long("side")
                                 .required(true)
                                 .default_value("both")
@@ -3147,10 +3144,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         )
                 )
                 .subcommand(
-                    SubCommand::with_name("buy")
+                    Command::new("buy")
                         .about("Place an order to buy SOL")
                         .arg(
-                            Arg::with_name("amount")
+                            Arg::new("amount")
                                 .value_name("AMOUNT")
                                 .takes_value(true)
                                 .validator(is_amount_or_all)
@@ -3158,7 +3155,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("The amount to buy, in SOL; accepts keyword ALL"),
                         )
                         .arg(
-                            Arg::with_name("at")
+                            Arg::new("at")
                                 .long("at")
                                 .value_name("PRICE")
                                 .takes_value(true)
@@ -3166,7 +3163,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Place a limit order at this price"),
                         )
                         .arg(
-                            Arg::with_name("bid_minus")
+                            Arg::new("bid_minus")
                                 .long("bid-minus")
                                 .value_name("AMOUNT")
                                 .takes_value(true)
@@ -3175,7 +3172,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Place a limit order at this amount under the current bid"),
                         )
                         .arg(
-                            Arg::with_name("pair")
+                            Arg::new("pair")
                                 .long("pair")
                                 .value_name("TRADING_PAIR")
                                 .takes_value(true)
@@ -3183,7 +3180,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Market to place the order in"),
                         )
                         .arg(
-                            Arg::with_name("if_balance_exceeds")
+                            Arg::new("if_balance_exceeds")
                                 .long("if-balance-exceeds")
                                 .value_name("AMOUNT")
                                 .takes_value(true)
@@ -3195,10 +3192,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         ),
                 )
                 .subcommand(
-                    SubCommand::with_name("sell")
+                    Command::new("sell")
                         .about("Place an order to sell SOL")
                         .arg(
-                            Arg::with_name("amount")
+                            Arg::new("amount")
                                 .value_name("AMOUNT")
                                 .takes_value(true)
                                 .validator(is_amount)
@@ -3206,7 +3203,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("The amount to sell, in SOL"),
                         )
                         .arg(
-                            Arg::with_name("at")
+                            Arg::new("at")
                                 .long("at")
                                 .value_name("PRICE")
                                 .takes_value(true)
@@ -3214,7 +3211,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Place a limit order at this price"),
                         )
                         .arg(
-                            Arg::with_name("ask_plus")
+                            Arg::new("ask_plus")
                                 .long("ask-plus")
                                 .value_name("AMOUNT")
                                 .takes_value(true)
@@ -3223,16 +3220,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Place a limit order at this amount over the current ask"),
                         )
                         .arg(
-                            Arg::with_name("lot_numbers")
+                            Arg::new("lot_numbers")
                                 .long("lot")
                                 .value_name("LOT NUMBER")
                                 .takes_value(true)
-                                .multiple(true)
+                                .multiple_occurrences(true).multiple_values(true)
                                 .validator(is_parsable::<usize>)
                                 .help("Lots to sell from [default: first in, first out]"),
                         )
                         .arg(
-                            Arg::with_name("pair")
+                            Arg::new("pair")
                                 .long("pair")
                                 .value_name("TRADING_PAIR")
                                 .takes_value(true)
@@ -3240,7 +3237,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .help("Market to place the order in"),
                         )
                         .arg(
-                            Arg::with_name("if_balance_exceeds")
+                            Arg::new("if_balance_exceeds")
                                 .long("if-balance-exceeds")
                                 .value_name("AMOUNT")
                                 .takes_value(true)
@@ -3251,7 +3248,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 ),
                         )
                         .arg(
-                            Arg::with_name("if_price_over")
+                            Arg::new("if_price_over")
                                 .long("if-price-over")
                                 .value_name("AMOUNT")
                                 .takes_value(true)
@@ -3264,7 +3261,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 ),
                         )
                         .arg(
-                            Arg::with_name("if_price_over_basis")
+                            Arg::new("if_price_over_basis")
                                 .long("if-price-over-basis")
                                 .takes_value(false)
                                 .help(
@@ -3273,7 +3270,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 ),
                         )
                         .arg(
-                            Arg::with_name("price_floor")
+                            Arg::new("price_floor")
                                 .long("price-floor")
                                 .value_name("AMOUNT")
                                 .takes_value(true)
@@ -3286,10 +3283,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         ),
                 )
                 .subcommand(
-                    SubCommand::with_name("pending-deposits")
+                    Command::new("pending-deposits")
                         .about("Display pending deposits")
                         .arg(
-                            Arg::with_name("quiet")
+                            Arg::new("quiet")
                                 .long("quiet")
                                 .takes_value(false)
                                 .help(
@@ -3299,10 +3296,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         ),
                 )
                 .subcommand(
-                    SubCommand::with_name("pending-withdrawals")
+                    Command::new("pending-withdrawals")
                         .about("Display pending withdrawals")
                         .arg(
-                            Arg::with_name("quiet")
+                            Arg::new("quiet")
                                 .long("quiet")
                                 .takes_value(false)
                                 .help(
@@ -3312,25 +3309,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         ),
                 )
                 .subcommand(
-                    SubCommand::with_name("lend")
+                    Command::new("lend")
                         .about("Make a lending offer")
                         .arg(
-                            Arg::with_name("coin")
+                            Arg::new("coin")
                                 .value_name("COIN")
                                 .takes_value(true)
                                 .required(true)
                                 .help("The coin to lend"),
                         )
                         .arg(
-                            Arg::with_name("amount")
+                            Arg::new("amount")
                                 .value_name("AMOUNT")
                                 .takes_value(true)
                                 .validator(is_amount_or_all)
                                 .help("The amount to lend; accepts keyword ALL"),
                         )
                         .arg(
-                            Arg::with_name("available")
-                                .short("a")
+                            Arg::new("available")
+                                .short('a')
                                 .long("available")
                                 .requires("amount")
                                 .takes_value(false)
@@ -3338,15 +3335,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         )
                 )
                 .subcommand(
-                    SubCommand::with_name("lending-history")
+                    Command::new("lending-history")
                         .about("Display lending history")
                         .setting(AppSettings::SubcommandRequiredElseHelp)
                         .setting(AppSettings::InferSubcommands)
                         .subcommand(
-                            SubCommand::with_name("range")
+                            Command::new("range")
                                 .about("Display lending history for the given date range")
                                 .arg(
-                                    Arg::with_name("start_date")
+                                    Arg::new("start_date")
                                         .value_name("YY/MM/DD")
                                         .takes_value(true)
                                         .required(true)
@@ -3354,7 +3351,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         .help("Start date, inclusive")
                                 )
                                 .arg(
-                                    Arg::with_name("end_date")
+                                    Arg::new("end_date")
                                         .value_name("YY/MM/DD")
                                         .takes_value(true)
                                         .required(true)
@@ -3364,10 +3361,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 )
                         )
                         .subcommand(
-                            SubCommand::with_name("previous")
+                            Command::new("previous")
                                 .about("Display lending history for previous days")
                                 .arg(
-                                    Arg::with_name("days")
+                                    Arg::new("days")
                                         .value_name("DAYS")
                                         .default_value("1")
                                         .validator(is_parsable::<usize>)
@@ -3375,15 +3372,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 )
                         )
                 )
-                .subcommand(SubCommand::with_name("sync").about("Synchronize exchange")),
+                .subcommand(Command::new("sync").about("Synchronize exchange")),
         );
     }
 
     let app_matches = app.get_matches();
-    let db_path = value_t_or_exit!(app_matches, "db_path", PathBuf);
+    let db_path = app_matches.value_of_t_or_exit("db_path");
     let verbose = app_matches.is_present("verbose");
     let rpc_client = RpcClient::new_with_commitment(
-        normalize_to_url_if_moniker(value_t_or_exit!(app_matches, "json_rpc_url", String)),
+        normalize_to_url_if_moniker(app_matches.value_of_t_or_exit("json_rpc_url")),
         CommitmentConfig::confirmed(),
     );
     let mut wallet_manager = None;
@@ -3414,9 +3411,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     match app_matches.subcommand() {
-        ("price", Some(arg_matches)) => {
-            let when = naivedate_of(&value_t_or_exit!(arg_matches, "when", String)).unwrap();
-            let token = value_t!(arg_matches, "token", Token).ok();
+        Some(("price", arg_matches)) => {
+            let when = naivedate_of(&arg_matches.value_of_t_or_exit("when")).unwrap();
+            let token = arg_matches.value_of_t("token").ok();
             let price = coin_gecko::get_price(when, token.into()).await?;
             if verbose {
                 println!("Historical price on {}: ${:.2}", when, price);
@@ -3424,7 +3421,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("{:.2}", price);
             }
         }
-        ("sync", Some(_arg_matches)) => {
+        Some(("sync", _arg_matches)) => {
             for (exchange, exchange_credentials) in db.get_configured_exchanges() {
                 println!("Synchronizing {:?}...", exchange);
                 let exchange_client = exchange_client_new(exchange, exchange_credentials)?;
@@ -3438,23 +3435,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .await?
             }
         }
-        ("account", Some(account_matches)) => match account_matches.subcommand() {
-            ("lot", Some(lot_matches)) => match lot_matches.subcommand() {
-                ("swap", Some(arg_matches)) => {
-                    let lot_number1 = value_t_or_exit!(arg_matches, "lot_number1", usize);
-                    let lot_number2 = value_t_or_exit!(arg_matches, "lot_number2", usize);
+        Some(("account", account_matches)) => match account_matches.subcommand() {
+            Some(("lot", lot_matches)) => match lot_matches.subcommand() {
+                Some(("swap", arg_matches)) => {
+                    let lot_number1 = arg_matches.value_of_t_or_exit("lot_number1");
+                    let lot_number2 = arg_matches.value_of_t_or_exit("lot_number2");
                     println!("Swapping lots {} and {}", lot_number1, lot_number2);
                     db.swap_lots(lot_number1, lot_number2)?;
                 }
-                ("move", Some(arg_matches)) => {
-                    let lot_number = value_t_or_exit!(arg_matches, "lot_number", usize);
+                Some(("move", arg_matches)) => {
+                    let lot_number = arg_matches.value_of_t_or_exit("lot_number");
                     let to_address =
                         pubkey_of_signer(arg_matches, "to_address", &mut wallet_manager)?
                             .expect("to");
                     db.move_lot(lot_number, to_address)?;
                 }
-                ("delete", Some(arg_matches)) => {
-                    let lot_number = value_t_or_exit!(arg_matches, "lot_number", usize);
+                Some(("delete", arg_matches)) => {
+                    let lot_number = arg_matches.value_of_t_or_exit("lot_number");
                     let confirm = arg_matches.is_present("confirm");
 
                     if !confirm {
@@ -3465,13 +3462,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 _ => unreachable!(),
             },
-            ("add", Some(arg_matches)) => {
-                let price = value_t!(arg_matches, "price", f64).ok();
-                let when = naivedate_of(&value_t_or_exit!(arg_matches, "when", String)).unwrap();
-                let signature = value_t!(arg_matches, "transaction", Signature).ok();
+            Some(("add", arg_matches)) => {
+                let price = arg_matches.value_of_t("price").ok();
+                let when = naivedate_of(&arg_matches.value_of_t_or_exit("when")).unwrap();
+                let signature = arg_matches.value_of_t("transaction").ok();
                 let address = pubkey_of(arg_matches, "address").unwrap();
-                let token = value_t!(arg_matches, "token", Token).ok();
-                let description = value_t!(arg_matches, "description", String)
+                let token = arg_matches.value_of_t("token").ok();
+                let description = arg_matches
+                    .value_of_t("description")
                     .ok()
                     .unwrap_or_default();
                 let no_sync = arg_matches.is_present("no_sync");
@@ -3490,15 +3488,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .await?;
                 process_account_sync(&mut db, &rpc_client, Some(address), &notifier).await?;
             }
-            ("dispose", Some(arg_matches)) => {
+            Some(("dispose", arg_matches)) => {
                 let address = pubkey_of(arg_matches, "address").unwrap();
-                let token = value_t!(arg_matches, "token", Token).ok();
-                let amount = value_t_or_exit!(arg_matches, "amount", f64);
-                let description = value_t!(arg_matches, "description", String)
+                let token = arg_matches.value_of_t("token").ok();
+                let amount = arg_matches.value_of_t_or_exit("amount");
+                let description = arg_matches
+                    .value_of_t("description")
                     .ok()
                     .unwrap_or_default();
-                let when = naivedate_of(&value_t_or_exit!(arg_matches, "when", String)).unwrap();
-                let price = value_t!(arg_matches, "price", f64).ok();
+                let when = naivedate_of(&arg_matches.value_of_t_or_exit("when")).unwrap();
+                let price = arg_matches.value_of_t("price").ok();
 
                 process_account_dispose(
                     &mut db,
@@ -3511,19 +3510,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
                 .await?;
             }
-            ("ls", Some(arg_matches)) => {
+            Some(("ls", arg_matches)) => {
                 let all = arg_matches.is_present("all");
                 let account_filter = pubkey_of(arg_matches, "account");
                 process_account_list(&db, account_filter, all).await?;
             }
-            ("xls", Some(arg_matches)) => {
-                let outfile = value_t_or_exit!(arg_matches, "outfile", String);
-                let filter_by_year = value_t!(arg_matches, "year", i32).ok();
+            Some(("xls", arg_matches)) => {
+                let outfile = arg_matches.value_of_t_or_exit("outfile");
+                let filter_by_year = arg_matches.value_of_t("year").ok();
                 process_account_xls(&db, &outfile, filter_by_year).await?;
             }
-            ("remove", Some(arg_matches)) => {
+            Some(("remove", arg_matches)) => {
                 let address = pubkey_of(arg_matches, "address").unwrap();
-                let token = MaybeToken::from(value_t!(arg_matches, "token", Token).ok());
+                let token = MaybeToken::from(arg_matches.value_of_t("token").ok());
                 let confirm = arg_matches.is_present("confirm");
 
                 let account = db
@@ -3541,13 +3540,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 db.remove_account(address, token)?;
                 println!("Removed {} ({})", address, token);
             }
-            ("set-sweep-stake-account", Some(arg_matches)) => {
+            Some(("set-sweep-stake-account", arg_matches)) => {
                 let address = pubkey_of(arg_matches, "address").unwrap();
-                let stake_authority = std::fs::canonicalize(value_t_or_exit!(
-                    arg_matches,
-                    "stake_authority",
-                    PathBuf
-                ))?;
+                let stake_authority =
+                    std::fs::canonicalize(arg_matches.value_of_t_or_exit("stake_authority"))?;
 
                 let sweep_stake_authority_keypair =
                     read_keypair_file(&stake_authority).map_err(|err| {
@@ -3567,7 +3563,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 println!("Sweep stake account set to {}", address);
             }
-            ("merge", Some(arg_matches)) => {
+            Some(("merge", arg_matches)) => {
                 let from_address = pubkey_of(arg_matches, "from_address").unwrap();
                 let into_address = pubkey_of(arg_matches, "into_address").unwrap();
 
@@ -3595,14 +3591,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
                 .await?;
             }
-            ("sweep", Some(arg_matches)) => {
+            Some(("sweep", arg_matches)) => {
                 let from_address = pubkey_of(arg_matches, "address").unwrap();
                 let (from_authority_signer, from_authority_address) =
                     signer_of(arg_matches, "authority", &mut wallet_manager)?;
                 let from_authority_address = from_authority_address.expect("authority_address");
                 let from_authority_signer = from_authority_signer.expect("authority_signer");
                 let retain_amount =
-                    MaybeToken::SOL().amount(value_t!(arg_matches, "retain", f64).unwrap_or(0.));
+                    MaybeToken::SOL().amount(arg_matches.value_of_t("retain").unwrap_or(0.));
                 let no_sweep_ok = arg_matches.is_present("no_sweep_ok");
 
                 process_account_sweep(
@@ -3617,13 +3613,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
                 .await?;
             }
-            ("split", Some(arg_matches)) => {
+            Some(("split", arg_matches)) => {
                 let from_address = pubkey_of(arg_matches, "from_address").unwrap();
-                let amount = MaybeToken::SOL().amount(value_t_or_exit!(arg_matches, "amount", f64));
-                let description = value_t!(arg_matches, "description", String)
+                let amount = MaybeToken::SOL().amount(arg_matches.value_of_t_or_exit("amount"));
+                let description = arg_matches
+                    .value_of_t("description")
                     .ok()
                     .unwrap_or_else(|| format!("Split at {}", Local::now()));
-                let lot_numbers = values_t!(arg_matches, "lot_numbers", usize)
+                let lot_numbers = arg_matches
+                    .values_of_t("lot_numbers")
                     .ok()
                     .map(|x| x.into_iter().collect());
                 let into_keypair = keypair_of(arg_matches, "into_keypair");
@@ -3655,13 +3653,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
                 .await?;
             }
-            ("sync", Some(arg_matches)) => {
+            Some(("sync", arg_matches)) => {
                 let address = pubkey_of(arg_matches, "address");
                 process_account_sync(&mut db, &rpc_client, address, &notifier).await?;
             }
             _ => unreachable!(),
         },
-        (exchange, Some(exchange_matches)) => {
+        Some((exchange, exchange_matches)) => {
             assert!(exchanges.contains(&exchange), "Bug!");
             let exchange = Exchange::from_str(exchange)?;
 
@@ -3673,12 +3671,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
 
             match exchange_matches.subcommand() {
-                ("address", Some(arg_matches)) => {
-                    let token = MaybeToken::from(value_t!(arg_matches, "token", Token).ok());
+                Some(("address", arg_matches)) => {
+                    let token = MaybeToken::from(arg_matches.value_of_t("token").ok());
                     let deposit_address = exchange_client()?.deposit_address(token).await?;
                     println!("{} deposit address: {}", token, deposit_address);
                 }
-                ("pending-deposits", Some(arg_matches)) => {
+                Some(("pending-deposits", arg_matches)) => {
                     let quiet = arg_matches.is_present("quiet");
 
                     let pending_deposits = db.pending_deposits(Some(exchange));
@@ -3701,7 +3699,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                     }
                 }
-                ("pending-withdrawals", Some(arg_matches)) => {
+                Some(("pending-withdrawals", arg_matches)) => {
                     let quiet = arg_matches.is_present("quiet");
 
                     let pending_withdrawals = db.pending_withdrawals(Some(exchange));
@@ -3726,7 +3724,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                     }
                 }
-                ("balance", Some(arg_matches)) => {
+                Some(("balance", arg_matches)) => {
                     let available_only = arg_matches.is_present("available_only");
                     let total_only = arg_matches.is_present("total_only");
                     let integer = arg_matches.is_present("integer");
@@ -3779,8 +3777,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                     }
                 }
-                ("market", Some(arg_matches)) => {
-                    let pair = value_t_or_exit!(arg_matches, "pair", String);
+                Some(("market", arg_matches)) => {
+                    let pair = arg_matches.value_of_t_or_exit("pair");
                     let format = if arg_matches.is_present("weighted_24h_average_price") {
                         MarketInfoFormat::Weighted24hAveragePrice
                     } else if arg_matches.is_present("hourly") {
@@ -3792,23 +3790,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     };
                     exchange_client()?.print_market_info(&pair, format).await?;
                 }
-                ("deposit", Some(arg_matches)) => {
-                    let token = MaybeToken::from(value_t!(arg_matches, "token", Token).ok());
+                Some(("deposit", arg_matches)) => {
+                    let token = MaybeToken::from(arg_matches.value_of_t("token").ok());
                     let amount = match arg_matches.value_of("amount").unwrap() {
                         "ALL" => None,
                         amount => Some(token.amount(amount.parse().unwrap())),
                     };
-                    let if_source_balance_exceeds =
-                        value_t!(arg_matches, "if_source_balance_exceeds", f64)
-                            .ok()
-                            .map(|x| token.amount(x));
-                    let if_exchange_balance_less_than =
-                        value_t!(arg_matches, "if_exchange_balance_less_than", f64)
-                            .ok()
-                            .map(|x| token.amount(x));
+                    let if_source_balance_exceeds = arg_matches
+                        .value_of_t("if_source_balance_exceeds")
+                        .ok()
+                        .map(|x| token.amount(x));
+                    let if_exchange_balance_less_than = arg_matches
+                        .value_of_t("if_exchange_balance_less_than")
+                        .ok()
+                        .map(|x| token.amount(x));
                     let from_address =
                         pubkey_of_signer(arg_matches, "from", &mut wallet_manager)?.expect("from");
-                    let lot_numbers = values_t!(arg_matches, "lot_numbers", usize)
+                    let lot_numbers = arg_matches
+                        .values_of_t("lot_numbers")
                         .ok()
                         .map(|x| x.into_iter().collect());
 
@@ -3861,8 +3860,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     )
                     .await?;
                 }
-                ("withdraw", Some(arg_matches)) => {
-                    let token = MaybeToken::from(value_t!(arg_matches, "token", Token).ok());
+                Some(("withdraw", arg_matches)) => {
+                    let token = MaybeToken::from(arg_matches.value_of_t("token").ok());
                     let amount = match arg_matches.value_of("amount").unwrap() {
                         "ALL" => None,
                         amount => Some(token.amount(amount.parse().unwrap())),
@@ -3870,12 +3869,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let to_address =
                         pubkey_of_signer(arg_matches, "to", &mut wallet_manager)?.expect("to");
 
-                    let lot_numbers = values_t!(arg_matches, "lot_numbers", usize)
+                    let lot_numbers = arg_matches
+                        .values_of_t("lot_numbers")
                         .ok()
                         .map(|x| x.into_iter().collect());
 
                     let withdrawal_password = None; // TODO: Support reading password from stdin
-                    let withdrawal_code = value_t!(arg_matches, "code", String).ok();
+                    let withdrawal_code = arg_matches.value_of_t("code").ok();
 
                     let exchange_client = exchange_client()?;
                     let deposit_address = exchange_client.deposit_address(token).await?;
@@ -3909,17 +3909,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     )
                     .await?;
                 }
-                ("cancel", Some(arg_matches)) => {
-                    let order_ids: HashSet<String> = values_t!(arg_matches, "order_id", String)
+                Some(("cancel", arg_matches)) => {
+                    let order_ids: HashSet<String> = arg_matches
+                        .values_of_t("order_id")
                         .ok()
                         .map(|x| x.into_iter().collect())
                         .unwrap_or_default();
 
-                    let max_create_time = value_t!(arg_matches, "age", i64).ok().and_then(|age| {
+                    let max_create_time = arg_matches.value_of_t("age").ok().and_then(|age| {
                         Utc::now().checked_sub_signed(chrono::Duration::hours(age))
                     });
 
-                    let side = value_t_or_exit!(arg_matches, "side", String);
+                    let side = arg_matches.value_of_t_or_exit("side");
                     let side = match side.as_str() {
                         "buy" => Some(OrderSide::Buy),
                         "sell" => Some(OrderSide::Sell),
@@ -3947,19 +3948,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     )
                     .await?;
                 }
-                ("buy", Some(arg_matches)) => {
+                Some(("buy", arg_matches)) => {
                     let token = MaybeToken::SOL();
-                    let pair = value_t_or_exit!(arg_matches, "pair", String);
+                    let pair = arg_matches.value_of_t_or_exit("pair");
                     let amount = match arg_matches.value_of("amount").unwrap() {
                         "ALL" => None,
                         amount => Some(str::parse::<f64>(amount).unwrap()),
                     };
 
-                    let if_balance_exceeds = value_t!(arg_matches, "if_balance_exceeds", f64).ok();
+                    let if_balance_exceeds = arg_matches.value_of_t("if_balance_exceeds").ok();
 
-                    let price = if let Ok(price) = value_t!(arg_matches, "at", f64) {
+                    let price = if let Ok(price) = arg_matches.value_of_t("at") {
                         LimitOrderPrice::At(price)
-                    } else if let Ok(bid_minus) = value_t!(arg_matches, "bid_minus", f64) {
+                    } else if let Ok(bid_minus) = arg_matches.value_of_t("bid_minus") {
                         LimitOrderPrice::AmountUnderBid(bid_minus)
                     } else {
                         return Err("--at or --bid-minus argument required".into());
@@ -3987,23 +3988,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     )
                     .await?;
                 }
-                ("sell", Some(arg_matches)) => {
+                Some(("sell", arg_matches)) => {
                     let token = MaybeToken::SOL();
-                    let pair = value_t_or_exit!(arg_matches, "pair", String);
-                    let amount = value_t_or_exit!(arg_matches, "amount", f64);
-                    let if_balance_exceeds = value_t!(arg_matches, "if_balance_exceeds", f64)
+                    let pair = arg_matches.value_of_t_or_exit("pair");
+                    let amount = arg_matches.value_of_t_or_exit("amount");
+                    let if_balance_exceeds = arg_matches
+                        .value_of_t("if_balance_exceeds")
                         .ok()
                         .map(|x| token.amount(x));
-                    let if_price_over = value_t!(arg_matches, "if_price_over", f64).ok();
+                    let if_price_over = arg_matches.value_of_t("if_price_over").ok();
                     let if_price_over_basis = arg_matches.is_present("if_price_over_basis");
-                    let price_floor = value_t!(arg_matches, "price_floor", f64).ok();
-                    let lot_numbers = values_t!(arg_matches, "lot_numbers", usize)
+                    let price_floor = arg_matches.value_of_t("price_floor").ok();
+                    let lot_numbers = arg_matches
+                        .values_of_t("lot_numbers")
                         .ok()
                         .map(|x| x.into_iter().collect());
 
-                    let price = if let Ok(price) = value_t!(arg_matches, "at", f64) {
+                    let price = if let Ok(price) = arg_matches.value_of_t("at") {
                         LimitOrderPrice::At(price)
-                    } else if let Ok(ask_plus) = value_t!(arg_matches, "ask_plus", f64) {
+                    } else if let Ok(ask_plus) = arg_matches.value_of_t("ask_plus") {
                         LimitOrderPrice::AmountOverAsk(ask_plus)
                     } else {
                         return Err("--at or --ask-plus argument required".into());
@@ -4034,8 +4037,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     )
                     .await?;
                 }
-                ("lend", Some(arg_matches)) => {
-                    let coin = value_t_or_exit!(arg_matches, "coin", String);
+                Some(("lend", arg_matches)) => {
+                    let coin = arg_matches.value_of_t_or_exit("coin");
                     let amount = arg_matches.value_of("amount");
                     let available = arg_matches.is_present("available");
 
@@ -4099,23 +4102,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         println!("Previous rate: {:.1}%", lending_info.previous_rate);
                     }
                 }
-                ("lending-history", Some(lending_history_matches)) => {
+                Some(("lending-history", lending_history_matches)) => {
                     let exchange_client = exchange_client()?;
                     let lending_history = match lending_history_matches.subcommand() {
-                        ("range", Some(arg_matches)) => {
+                        Some(("range", arg_matches)) => {
                             let start_date =
-                                naivedate_of(&value_t_or_exit!(arg_matches, "start_date", String))
+                                naivedate_of(&arg_matches.value_of_t_or_exit("start_date"))
                                     .unwrap();
                             let end_date =
-                                naivedate_of(&value_t_or_exit!(arg_matches, "end_date", String))
-                                    .unwrap();
+                                naivedate_of(&arg_matches.value_of_t_or_exit("end_date")).unwrap();
                             exchange_client.get_lending_history(LendingHistory::Range {
                                 start_date,
                                 end_date,
                             })
                         }
-                        ("previous", Some(arg_matches)) => {
-                            let days = value_t_or_exit!(arg_matches, "days", usize);
+                        Some(("previous", arg_matches)) => {
+                            let days = arg_matches.value_of_t_or_exit("days");
                             exchange_client.get_lending_history(LendingHistory::Previous { days })
                         }
                         _ => unreachable!(),
@@ -4126,7 +4128,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         println!("{}: {}", coin, amount.separated_string_with_fixed_place(2));
                     }
                 }
-                ("sync", Some(_arg_matches)) => {
+                Some(("sync", _arg_matches)) => {
                     let exchange_client = exchange_client()?;
                     process_sync_exchange(
                         &mut db,
@@ -4137,8 +4139,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     )
                     .await?;
                 }
-                ("api", Some(api_matches)) => match api_matches.subcommand() {
-                    ("show", Some(_arg_matches)) => match db.get_exchange_credentials(exchange) {
+                Some(("api", api_matches)) => match api_matches.subcommand() {
+                    Some(("show", _arg_matches)) => match db.get_exchange_credentials(exchange) {
                         Some(ExchangeCredentials {
                             api_key,
                             subaccount,
@@ -4154,10 +4156,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             println!("No API key set for {:?}", exchange);
                         }
                     },
-                    ("set", Some(arg_matches)) => {
-                        let api_key = value_t_or_exit!(arg_matches, "api_key", String);
-                        let secret = value_t_or_exit!(arg_matches, "secret", String);
-                        let subaccount = value_t!(arg_matches, "subaccount", String).ok();
+                    Some(("set", arg_matches)) => {
+                        let api_key = arg_matches.value_of_t_or_exit("api_key");
+                        let secret = arg_matches.value_of_t_or_exit("secret");
+                        let subaccount = arg_matches.value_of_t("subaccount").ok();
                         db.set_exchange_credentials(
                             exchange,
                             ExchangeCredentials {
@@ -4168,7 +4170,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         )?;
                         println!("API key set for {:?}", exchange);
                     }
-                    ("clear", Some(_arg_matches)) => {
+                    Some(("clear", _arg_matches)) => {
                         db.clear_exchange_credentials(exchange)?;
                         println!("Cleared API key for {:?}", exchange);
                     }
